@@ -1,0 +1,40 @@
+name: SentinelGraph CI & Security Audit
+
+on:
+  push:
+    branches: [ "main", "feat/**", "fix/**" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  verify-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Repository Secret & Ownership Hygiene Check
+        run: |
+          python -m backend.app.cli.main audit-security
+
+      - name: Run Database Migrations & Synthetic Crime Seeder
+        run: |
+          python -m backend.app.cli.main init-db --seed
+
+      - name: Execute Unit, Integration & E2E Test Suites
+        run: |
+          python -m unittest discover -s tests -p "test_*.py" -v
