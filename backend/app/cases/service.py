@@ -280,7 +280,7 @@ class CaseManagementService:
                 raise ResourceNotFoundError("Case", case_id)
 
             alert_rows = conn.execute(
-                "SELECT * FROM alerts WHERE case_id = ? ORDER BY created_at ASC", (case_id,)
+                "SELECT a.*, r.name AS rule_name, r.family AS rule_family FROM alerts a JOIN typology_rules r ON r.id = a.rule_id WHERE a.case_id = ? ORDER BY a.created_at ASC", (case_id,)
             ).fetchall()
             note_rows = conn.execute(
                 """
