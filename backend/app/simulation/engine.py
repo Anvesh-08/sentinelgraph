@@ -56,7 +56,7 @@ class RuleSimulationEngine:
         with self.db.connection() as conn:
             sar_rows = conn.execute(
                 """
-                SELECT DISTINCT a.account_id
+                SELECT DISTINCT a.id AS account_id
                 FROM sar_reports s
                 JOIN accounts a ON a.customer_id = s.subject_customer_id
                 WHERE s.filing_status IN ('APPROVED', 'FILED_WITH_FINCEN')
