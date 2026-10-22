@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SentinelGraph — AML Transaction Monitoring, RuleForge & Graph Forensics Workbench</title>
+  <style>
+    :root {
+      --bg-primary: #0b0f19;
+      --bg-secondary: #111827;
+      --bg-card: #1e293b;
+      --border-color: #334155;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent-blue: #38bdf8;
+      --accent-indigo: #6366f1;
+      --sev-critical: #ef4444;
+      --sev-high: #f97316;
+      --sev-medium: #eab308;
+      --sev-low: #22c55e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+    header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.15rem;
+      color: var(--accent-blue);
+    }
+    .badge {
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-CRITICAL { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid #ef4444; }
+    .badge-HIGH { background: rgba(249, 115, 22, 0.2); color: #fdba74; border: 1px solid #f97316; }
+    .badge-MEDIUM { background: rgba(234, 179, 8, 0.2); color: #fde047; border: 1px solid #eab308; }
+    .badge-LOW { background: rgba(34, 197, 94, 0.2); color: #86efac; border: 1px solid #22c55e; }
+    .layout {
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      min-height: calc(100vh - 60px);
+    }
+    nav {
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      padding: 1rem 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    nav button {
+      background: transparent;
+      color: var(--text-secondary);
+      border: none;
+      text-align: left;
+      padding: 0.7rem 0.95rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+    nav button:hover, nav button.active {
+      background: var(--bg-card);
+      color: var(--accent-blue);
+    }
+    main {
+      padding: 1.5rem;
+      overflow-y: auto;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 0.65rem;
+      padding: 1.15rem;
+      margin-bottom: 1.25rem;
+    }
+    .kpi-value {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-top: 0.25rem;
+    }
+    .kpi-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+    }
+    th, td {
+      padding: 0.7rem 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      text-align: left;
+    }
+    th {
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .btn {
+      background: var(--accent-indigo);
+      color: white;
+      border: none;
+      padding: 0.48rem 0.9rem;
+      border-radius: 0.4rem;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.82rem;
+    }
+    .btn-secondary { background: #334155; }
+    .btn-success { background: #16a34a; }
+    .btn-danger { background: #dc2626; }
+    input, select, textarea {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.4rem;
+      font-size: 0.85rem;
+    }
+    pre {
+      background: #090d16;
+      border: 1px solid var(--border-color);
+      padding: 0.9rem;
+      border-radius: 0.5rem;
+      overflow-x: auto;
+      font-size: 0.8rem;
+      white-space: pre-wrap;
+      color: #e2e8f0;
+    }
+    .hidden { display: none; }
+    .flex-row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span>SENTINELGRAPH</span>
+      <span class="badge badge-LOW">v1.0.0 Enterprise AML & Forensics</span>
+    </div>
+    <div class="flex-row">
+      <label for="personaSelect" style="font-size:0.82rem;color:var(--text-secondary);">Active Operator Persona:</label>
+      <select id="personaSelect" onchange="switchPersona()">
+        <option value="l2_investigator|Investigator#2026!Secure">Priya Nair (L2_INVESTIGATOR)</option>
+        <option value="l1_analyst|Analyst#2026!Secure">Arjun Mehta (L1_ANALYST)</option>
+        <option value="qa_officer|Compliance#2026!Secure">Elena Rostova (QA_COMPLIANCE_OFFICER)</option>
+        <option value="risk_engineer|Engineer#2026!Secure">Marcus Vance (RISK_ENGINEER)</option>
+        <option value="admin|Admin#2026!Secure">Vikramaditya Rao (SYSTEM_ADMIN)</option>
+      </select>
+      <span id="activeRoleBadge" class="badge badge-HIGH">L2_INVESTIGATOR</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav>
+      <button class="active" onclick="showTab('dashboard', this)">1. Executive KPI Dashboard</button>
+      <button onclick="showTab('alerts', this)">2. Alert Triage Queue</button>
+      <button onclick="showTab('graph', this)">3. Multi-Hop Graph Studio</button>
+      <button onclick="showTab('cases', this)">4. 4-Eyes Case & SAR Workbench</button>
+      <button onclick="showTab('ruleforge', this)">5. RuleForge Backtest Studio</button>
+      <button onclick="showTab('customers', this)">6. Customer KYC & 6-Factor Risk</button>
+      <button onclick="showTab('sanctions', this)">7. Fuzzy Sanctions Screener</button>
+      <button onclick="showTab('audit', this)">8. Cryptographic Audit Ledger</button>
+    </nav>
+
+    <main>
+      <!-- TAB 1: DASHBOARD -->
+      <section id="tab-dashboard">
+        <h2 style="margin-bottom:1rem;">Executive AML & Financial Crime Operations Overview</h2>
+        <div class="kpi-grid" id="dashboardKpis"></div>
+        <div class="card">
+          <h3 style="margin-bottom:0.75rem;">Top Triggered Typology Rules Across Ledger</h3>
+          <table>
+            <thead>
+              <tr><th>Rule ID</th><th>Typology Name</th><th>Family</th><th>Active Alerts</th><th>Avg Confidence</th></tr>
+            </thead>
+            <tbody id="topRulesBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 2: ALERTS -->
+      <section id="tab-alerts" class="hidden">
+        <div class="flex-row" style="justify-content:space-between;margin-bottom:1rem;">
+          <h2>Transaction Monitoring Alert Queue</h2>
+          <button class="btn" onclick="loadAlerts()">Refresh Queue</button>
+        </div>
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>Alert Ref</th><th>Rule</th><th>Customer & Account</th><th>Severity</th><th>Score</th><th>Status</th><th>Trigger Narrative</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="alertsTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 3: GRAPH -->
+      <section id="tab-graph" class="hidden">
+        <div class="flex-row" style="justify-content:space-between;margin-bottom:1rem;">
+          <h2>Heterogeneous Multi-Hop Graph Forensics Studio</h2>
+          <div class="flex-row">
+            <input id="graphCenterInput" value="acct-006" placeholder="Entity ID (e.g. acct-006, cust-002, acct-003)" />
+            <select id="graphHopsInput">
+              <option value="2">2 Hops</option>
+              <option value="3" selected>3 Hops</option>
+              <option value="4">4 Hops</option>
+            </select>
+            <button class="btn" onclick="loadGraph()">Trace Ego Network</button>
+          </div>
+        </div>
+        <div class="card">
+          <svg id="graphSvg" width="100%" height="440" viewBox="0 0 900 440" style="background:#090d16;border-radius:0.5rem;border:1px solid var(--border-color);"></svg>
+        </div>
+        <div class="card">
+          <h3 style="margin-bottom:0.5rem;">Global Criminal Ring Detection (Tarjan SCC & Shared Device Clusters)</h3>
+          <pre id="graphRingsOutput">Loading global network rings...</pre>
+        </div>
+      </section>
+
+      <!-- TAB 4: CASES & SAR -->
+      <section id="tab-cases" class="hidden">
+        <h2 style="margin-bottom:1rem;">Four-Eyes Case Management & FinCEN 5-W SAR Workbench</h2>
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>Case Number</th><th>Customer</th><th>Priority</th><th>Status</th><th>Suspicious USD</th><th>Investigator</th><th>QA Reviewer</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="casesTableBody"></tbody>
+          </table>
+        </div>
+        <div class="card" id="caseDetailCard">
+          <h3>Selected Case Dossier & FinCEN 5-W SAR Narrative</h3>
+          <pre id="caseDetailOutput">Select a case above to inspect evidence, generate a 5-W FinCEN SAR, or execute a Four-Eyes QA state transition.</pre>
+        </div>
+      </section>
+
+      <!-- TAB 5: RULEFORGE -->
+      <section id="tab-ruleforge" class="hidden">
+        <h2 style="margin-bottom:1rem;">RuleForge — Shadow-Mode Rule Backtesting & Parameter Studio</h2>
+        <div class="card">
+          <div class="flex-row" style="margin-bottom:0.75rem;">
+            <label>Select Rule:</label>
+            <select id="simRuleId">
+              <option value="AML-STR-001">AML-STR-001 (Sub-CTR Cash Structuring)</option>
+              <option value="AML-LAY-001">AML-LAY-001 (High-Velocity Pass-Through)</option>
+              <option value="AML-NET-001">AML-NET-001 (Fan-In Collector Hub)</option>
+              <option value="FRD-BEH-002">FRD-BEH-002 (ATO New Device Drain)</option>
+            </select>
+            <label>Candidate JSON Thresholds:</label>
+            <input id="simParamsInput" style="width:420px;" value='{"min_amount_usd": 7500.0, "max_amount_usd": 9999.99, "min_occurrences": 2, "window_hours": 168}' />
+            <button class="btn" onclick="runBacktest()">Execute Shadow Backtest</button>
+          </div>
+          <pre id="simResultOutput">Run a shadow backtest to view True Positives, False Positives, Precision, Recall, F1, and Alert Volume Delta.</pre>
+        </div>
+      </section>
+
+      <!-- TAB 6: CUSTOMERS -->
+      <section id="tab-customers" class="hidden">
+        <h2 style="margin-bottom:1rem;">Customer KYC/KYB Registry & 6-Factor Dynamic Risk Breakdown</h2>
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>Ref</th><th>Legal Name</th><th>Type</th><th>Country</th><th>Industry</th><th>PEP</th><th>Sanctions</th><th>Composite Score</th><th>Risk Band</th><th>Action</th></tr>
+            </thead>
+            <tbody id="customersTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 7: SANCTIONS -->
+      <section id="tab-sanctions" class="hidden">
+        <h2 style="margin-bottom:1rem;">Multi-Algorithm Watchlist, Sanctions & PEP Fuzzy Screener</h2>
+        <div class="card">
+          <div class="flex-row" style="margin-bottom:0.8rem;">
+            <input id="sancNameInput" value="Viktor Morozov" placeholder="Entity or Individual Name" />
+            <input id="sancCountryInput" value="RU" placeholder="Country ISO-2" style="width:90px;" />
+            <button class="btn" onclick="runSanctionsScreen()">Screen Watchlists (Jaro-Winkler + Soundex)</button>
+          </div>
+          <pre id="sancOutput">Enter a name above to screen against OFAC SDN, UN, EU, PEP, and Adverse Media watchlists.</pre>
+        </div>
+      </section>
+
+      <!-- TAB 8: AUDIT -->
+      <section id="tab-audit" class="hidden">
+        <div class="flex-row" style="justify-content:space-between;margin-bottom:1rem;">
+          <h2>Tamper-Evident HMAC-SHA256 Chained Audit Ledger</h2>
+          <button class="btn btn-success" onclick="verifyAuditChain()">Verify Cryptographic Hash Chain</button>
+        </div>
+        <div class="card">
+          <pre id="auditVerificationBanner">Click "Verify Cryptographic Hash Chain" to validate genesis-to-tip HMAC-SHA256 signatures.</pre>
+        </div>
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>Seq #</th><th>Timestamp</th><th>Actor</th><th>Role</th><th>Action</th><th>Entity</th><th>Entry HMAC-SHA256</th></tr>
+            </thead>
+            <tbody id="auditTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    let authToken = "";
+    let currentUser = null;
+
+    async function apiFetch(path, options = {}) {
+      const headers = Object.assign({ "Content-Type": "application/json" }, options.headers || {});
+      if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
+      const res = await fetch(path, Object.assign({}, options, { headers }));
+      const data = await res.json();
+      if (!res.ok) {
+        const msg = (data && data.error && data.error.message) ? data.error.message : JSON.stringify(data);
+        throw new Error(msg);
+      }
+      return data;
+    }
+
+    async function switchPersona() {
+      const raw = document.getElementById("personaSelect").value;
+      const [username, password] = raw.split("|");
+      const data = await apiFetch("/api/v1/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ username, password }),
+      });
+      authToken = data.access_token;
+      currentUser = data.user;
+      document.getElementById("activeRoleBadge").textContent = currentUser.role;
+      await loadDashboard();
+    }
+
+    function showTab(tabName, btn) {
+      document.querySelectorAll("main > section").forEach(s => s.classList.add("hidden"));
+      document.getElementById(`tab-${tabName}`).classList.remove("hidden");
+      document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+      if (btn) btn.classList.add("active");
+      if (tabName === "dashboard") loadDashboard();
+      if (tabName === "alerts") loadAlerts();
+      if (tabName === "graph") loadGraph();
+      if (tabName === "cases") loadCases();
+      if (tabName === "customers") loadCustomers();
+      if (tabName === "audit") loadAuditLogs();
+    }
+
+    async function loadDashboard() {
+      const d = await apiFetch("/api/v1/analytics/dashboard");
+      const t = d.totals;
+      document.getElementById("dashboardKpis").innerHTML = `
+        <div class="card"><div class="kpi-label">Monitored Customers</div><div class="kpi-value">${t.total_customers}</div></div>
+        <div class="card"><div class="kpi-label">Total Ledger Volume</div><div class="kpi-value">$${Number(t.total_tx_volume_usd).toLocaleString()}</div></div>
+        <div class="card"><div class="kpi-label">Active Typology Alerts</div><div class="kpi-value">${t.total_alerts}</div></div>
+        <div class="card"><div class="kpi-label">Investigation Cases</div><div class="kpi-value">${t.total_cases}</div></div>
+        <div class="card"><div class="kpi-label">FinCEN SARs & CTRs</div><div class="kpi-value">${t.total_sars} SAR / ${t.total_ctrs} CTR</div></div>
+        <div class="card"><div class="kpi-label">Audit Chain Status</div><div class="kpi-value" style="color:#22c55e;">${d.audit_ledger_integrity.is_valid ? 'VERIFIED' : 'TAMPERED'}</div></div>
+      `;
+      document.getElementById("topRulesBody").innerHTML = d.top_triggered_rules.map(r => `
+        <tr>
+          <td><strong>${r.rule_id}</strong></td>
+          <td>${r.rule_name}</td>
+          <td>${r.family}</td>
+          <td>${r.alert_count}</td>
+          <td>${r.avg_score}%</td>
+        </tr>
+      `).join("");
+    }
+
+    async function loadAlerts() {
+      const data = await apiFetch("/api/v1/alerts");
+      document.getElementById("alertsTableBody").innerHTML = data.alerts.map(a => `
+        <tr>
+          <td><strong>${a.alert_ref}</strong></td>
+          <td>${a.rule_id}</td>
+          <td>${a.customer_name}<br/><small style="color:var(--text-secondary)">${a.account_number}</small></td>
+          <td><span class="badge badge-${a.severity}">${a.severity}</span></td>
+          <td>${a.risk_score}%</td>
+          <td>${a.status}</td>
+          <td style="max-width:340px;">${a.trigger_narrative}</td>
+          <td>
+            ${a.status === 'NEW' ? `<button class="btn" onclick="escalateAlert('${a.id}')">Escalate to Case</button>` : (a.case_id || '')}
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    async function escalateAlert(alertId) {
+      try {
+        await apiFetch(`/api/v1/alerts/${alertId}/triage`, {
+          method: "POST",
+          body: JSON.stringify({ action: "ESCALATE_TO_CASE", case_priority: "CRITICAL" }),
+        });
+        await loadAlerts();
+      } catch (err) {
+        alert("Triage Error: " + err.message);
+      }
+    }
+
+    async function loadGraph() {
+      const center = document.getElementById("graphCenterInput").value.trim();
+      const hops = document.getElementById("graphHopsInput").value;
+      const ego = await apiFetch(`/api/v1/graph/ego/${encodeURIComponent(center)}?hops=${hops}`);
+      const svg = document.getElementById("graphSvg");
+      const nodes = ego.nodes || [];
+      const edges = ego.edges || [];
+      const cx = 450, cy = 220;
+      const coords = {};
+      nodes.forEach((n, idx) => {
+        if (n.id === ego.center_id) {
+          coords[n.id] = { x: cx, y: cy };
+        } else {
+          const angle = (2 * Math.PI * idx) / Math.max(1, nodes.length);
+          const radius = n.hop_distance === 1 ? 115 : (n.hop_distance === 2 ? 185 : 210);
+          coords[n.id] = {
+            x: Math.round(cx + radius * Math.cos(angle)),
+            y: Math.round(cy + radius * Math.sin(angle)),
+          };
+        }
+      });
+
+      let html = "";
+      edges.forEach(e => {
+        const p1 = coords[e.source], p2 = coords[e.target];
+        if (!p1 || !p2) return;
+        const color = e.edge_type === "USED_DEVICE" ? "#ef4444" : (e.edge_type === "FUNDS_TRANSFER" ? "#38bdf8" : "#64748b");
+        html += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${color}" stroke-width="2" />`;
+      });
+      nodes.forEach(n => {
+        const p = coords[n.id];
+        const fill = n.risk_score >= 75 ? "#ef4444" : (n.risk_score >= 50 ? "#f97316" : "#38bdf8");
+        html += `
+          <g transform="translate(${p.x},${p.y})">
+            <circle r="16" fill="${fill}" stroke="#0f172a" stroke-width="2.5"></circle>
+            <text y="28" text-anchor="middle" fill="#e2e8f0" font-size="10">${n.label.slice(0, 22)}</text>
+          </g>
+        `;
+      });
+      svg.innerHTML = html;
+
+      const rings = await apiFetch("/api/v1/graph/rings");
+      document.getElementById("graphRingsOutput").textContent = JSON.stringify(rings, null, 2);
+    }
+
+    async function loadCases() {
+      const data = await apiFetch("/api/v1/cases");
+      document.getElementById("casesTableBody").innerHTML = data.cases.map(c => `
+        <tr>
+          <td><strong>${c.case_number}</strong></td>
+          <td>${c.customer_name}</td>
+          <td><span class="badge badge-${c.priority}">${c.priority}</span></td>
+          <td>${c.status}</td>
+          <td>$${Number(c.total_suspicious_amount_usd).toLocaleString()}</td>
+          <td>${c.investigator_name || '-'}</td>
+          <td>${c.qa_reviewer_name || '-'}</td>
+          <td class="flex-row">
+            <button class="btn btn-secondary" onclick="inspectCase('${c.id}')">Inspect</button>
+            <button class="btn" onclick="generateSar('${c.id}')">Draft 5-W SAR</button>
+            <button class="btn btn-success" onclick="qaApproveCase('${c.id}')">4-Eyes QA Approve</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    async function inspectCase(caseId) {
+      const c = await apiFetch(`/api/v1/cases/${caseId}`);
+      const sarText = (c.sar_reports && c.sar_reports.length > 0)
+        ? c.sar_reports[0].full_narrative_text
+        : JSON.stringify(c, null, 2);
+      document.getElementById("caseDetailOutput").textContent = sarText;
+    }
+
+    async function generateSar(caseId) {
+      try {
+        const sar = await apiFetch(`/api/v1/cases/${caseId}/generate-sar`, {
+          method: "POST",
+          body: JSON.stringify({ filing_type: "INITIAL", auto_submit_for_qa: true }),
+        });
+        document.getElementById("caseDetailOutput").textContent = sar.full_narrative_text;
+        await loadCases();
+      } catch (err) {
+        alert("SAR Generation Error: " + err.message);
+      }
+    }
+
+    async function qaApproveCase(caseId) {
+      try {
+        await apiFetch(`/api/v1/cases/${caseId}/transition`, {
+          method: "POST",
+          body: JSON.stringify({
+            target_status: "SAR_APPROVED",
+            notes: "Four-Eyes QA compliance verification completed.",
+          }),
+        });
+        await loadCases();
+        await inspectCase(caseId);
+      } catch (err) {
+        alert("Four-Eyes QA Check: " + err.message);
+      }
+    }
+
+    async function runBacktest() {
+      try {
+        const ruleId = document.getElementById("simRuleId").value;
+        const candidateParams = JSON.parse(document.getElementById("simParamsInput").value);
+        const res = await apiFetch("/api/v1/simulations/backtest", {
+          method: "POST",
+          body: JSON.stringify({
+            rule_id: ruleId,
+            candidate_parameters: candidateParams,
+            notes: "Interactive workbench shadow simulation",
+          }),
+        });
+        document.getElementById("simResultOutput").textContent = JSON.stringify(res, null, 2);
+      } catch (err) {
+        alert("Simulation Error: " + err.message);
+      }
+    }
+
+    async function loadCustomers() {
+      const data = await apiFetch("/api/v1/customers");
+      document.getElementById("customersTableBody").innerHTML = data.customers.map(c => `
+        <tr>
+          <td>${c.external_ref}</td>
+          <td><strong>${c.legal_name}</strong></td>
+          <td>${c.customer_type}</td>
+          <td>${c.residence_country}</td>
+          <td>${c.occupation_or_industry}</td>
+          <td>${c.pep_flag ? 'YES' : 'NO'}</td>
+          <td>${c.sanctions_status}</td>
+          <td><strong>${c.composite_risk_score}</strong></td>
+          <td><span class="badge badge-${c.risk_band}">${c.risk_band}</span></td>
+          <td><button class="btn btn-secondary" onclick="recalcRisk('${c.id}')">Recalculate Risk</button></td>
+        </tr>
+      `).join("");
+    }
+
+    async function recalcRisk(custId) {
+      await apiFetch(`/api/v1/customers/${custId}/recalculate-risk`, { method: "POST" });
+      await loadCustomers();
+    }
+
+    async function runSanctionsScreen() {
+      const name = document.getElementById("sancNameInput").value;
+      const country = document.getElementById("sancCountryInput").value;
+      const res = await apiFetch("/api/v1/sanctions/screen", {
+        method: "POST",
+        body: JSON.stringify({ screened_name: name, country_code: country, min_similarity_threshold: 0.65 }),
+      });
+      document.getElementById("sancOutput").textContent = JSON.stringify(res, null, 2);
+    }
+
+    async function loadAuditLogs() {
+      const data = await apiFetch("/api/v1/audit/logs?limit=50");
+      document.getElementById("auditTableBody").innerHTML = data.audit_logs.map(l => `
+        <tr>
+          <td>${l.sequence_id}</td>
+          <td>${l.timestamp}</td>
+          <td>${l.actor_user_id}</td>
+          <td>${l.actor_role}</td>
+          <td><strong>${l.action}</strong></td>
+          <td>${l.entity_type} (${l.entity_id})</td>
+          <td><code>${l.entry_hash.slice(0, 20)}...</code></td>
+        </tr>
+      `).join("");
+    }
+
+    async function verifyAuditChain() {
+      try {
+        const res = await apiFetch("/api/v1/audit/verify");
+        document.getElementById("auditVerificationBanner").textContent = JSON.stringify(res, null, 2);
+      } catch (err) {
+        alert("Audit Verification Permission Check: " + err.message);
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", switchPersona);
+  </script>
+</body>
+</html>
