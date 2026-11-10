@@ -1,23 +1,27 @@
 """
-Unified 100-Rule Global Typology Registry combining the 25 Core SentinelGraph Detectors
-with the 75 Specialized Regional & Domain Typology Detectors:
-- Core 25 Detectors (Structuring, Layering, Mule Networks, Geographic, Behavioral/ATO)
-- 15 TBML & Correspondent Banking Detectors (`pack_tbml_correspondent`)
-- 15 Crypto, DeFi & VASP Forensics Detectors (`pack_crypto_defi_forensics`)
-- 15 India RBI Master Direction & FIU-IND PMLA Detectors (`pack_india_rbi_fiu_ind`)
-- 15 EU AMLD6, UK FCA/PSR & MAS Notice 626 Detectors (`pack_eu_uk_apac_regimes`)
-- 15 Cybercrime, BEC, Synthetic Identity & Capital Markets Detectors (`pack_cyber_bec_market_fraud`)
+Unified Global Typology Registry combining:
+- 25 Core SentinelGraph Detectors
+- 75 Regional & Specialized Detectors (TBML, Correspondent, Crypto, India RBI/FIU-IND, EU AMLD6/UK FCA/MAS 626, Cyber/BEC)
+- 75 Sector-Specific Detectors (Maritime Sanctions, Supply-Chain Finance, Private Wealth, PayFac/Acquiring, Public Sector/Elder Scams)
+Total: 175 Configurable Production AML & Fraud Typology Detectors.
 """
 from typing import Dict, List, Type
 
 from backend.app.typologies.base import BaseTypologyDetector
-from backend.app.typologies.catalog import FULL_100_TYPOLOGY_RULES
+from backend.app.typologies.catalog import DEFAULT_TYPOLOGY_RULES
 from backend.app.typologies.engine import ALL_DETECTOR_CLASSES
+from backend.app.typologies.pack_correspondent_maritime import PACK_DETECTORS as MARITIME_DETECTORS
 from backend.app.typologies.pack_crypto_defi_forensics import PACK_DETECTORS as CRYPTO_DETECTORS
 from backend.app.typologies.pack_cyber_bec_market_fraud import PACK_DETECTORS as CYBER_DETECTORS
+from backend.app.typologies.pack_elder_and_public_sector import PACK_DETECTORS as PUBLIC_DETECTORS
 from backend.app.typologies.pack_eu_uk_apac_regimes import PACK_DETECTORS as EU_UK_APAC_DETECTORS
 from backend.app.typologies.pack_india_rbi_fiu_ind import PACK_DETECTORS as RBI_DETECTORS
+from backend.app.typologies.pack_merchant_acquiring_payfac import PACK_DETECTORS as PAYFAC_DETECTORS
 from backend.app.typologies.pack_tbml_correspondent import PACK_DETECTORS as TBML_DETECTORS
+from backend.app.typologies.pack_trade_finance_commodities import PACK_DETECTORS as TRADE_DETECTORS
+from backend.app.typologies.pack_wealth_private_banking import PACK_DETECTORS as WEALTH_DETECTORS
+from backend.app.typologies.regional_catalog import REGIONAL_TYPOLOGY_RULES
+from backend.app.typologies.sector_catalog import SECTOR_TYPOLOGY_RULES
 
 
 ALL_100_DETECTOR_CLASSES: List[Type[BaseTypologyDetector]] = (
@@ -29,10 +33,27 @@ ALL_100_DETECTOR_CLASSES: List[Type[BaseTypologyDetector]] = (
     + list(CYBER_DETECTORS)
 )
 
+ALL_175_DETECTOR_CLASSES: List[Type[BaseTypologyDetector]] = (
+    list(ALL_100_DETECTOR_CLASSES)
+    + list(MARITIME_DETECTORS)
+    + list(TRADE_DETECTORS)
+    + list(WEALTH_DETECTORS)
+    + list(PAYFAC_DETECTORS)
+    + list(PUBLIC_DETECTORS)
+)
+
 
 def get_100_detector_map() -> Dict[str, BaseTypologyDetector]:
     return {cls.rule_id: cls() for cls in ALL_100_DETECTOR_CLASSES}
 
 
 def get_full_100_catalog() -> list:
-    return FULL_100_TYPOLOGY_RULES
+    return DEFAULT_TYPOLOGY_RULES + REGIONAL_TYPOLOGY_RULES
+
+
+def get_175_detector_map() -> Dict[str, BaseTypologyDetector]:
+    return {cls.rule_id: cls() for cls in ALL_175_DETECTOR_CLASSES}
+
+
+def get_full_175_catalog() -> list:
+    return DEFAULT_TYPOLOGY_RULES + REGIONAL_TYPOLOGY_RULES + SECTOR_TYPOLOGY_RULES
