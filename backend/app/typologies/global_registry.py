@@ -36,3 +36,17 @@ def get_100_detector_map() -> Dict[str, BaseTypologyDetector]:
 
 def get_full_100_catalog() -> list:
     return FULL_100_TYPOLOGY_RULES
+
+
+ALL_220_DETECTOR_CLASSES = (
+    list(ALL_175_DETECTOR_CLASSES)
+    + list(DEFI_DETECTORS)
+    + list(INSURANCE_DETECTORS)
+    + list(MARKETS_DETECTORS)
+)
+
+def get_220_detector_map():
+    return {cls.rule_id: cls() for cls in ALL_220_DETECTOR_CLASSES}
+
+def get_full_220_catalog():
+    return get_full_175_catalog() + ADVANCED_TYPOLOGY_RULES
