@@ -639,3 +639,80 @@ def verify_audit_chain(
 ) -> Dict[str, Any]:
     assert_permission(current_user["role"], Permission.VERIFY_AUDIT_LEDGER)
     return AuditService(db).verify_chain_integrity(raise_on_error=False)
+
+
+
+# ------------------------------------------------------------------------------
+# 9. Enterprise v2.0 Endpoints: ISO 20022 / SWIFT, FinCEN/FIU-IND XML,
+#    100-Rule Global Registry, Entity Resolution, EDD Dossiers & Red-Team QA
+# ------------------------------------------------------------------------------
+
+from backend.app.entity_resolution.edd_workflow import EnhancedDueDiligenceEngine
+from backend.app.entity_resolution.resolver import ProbabilisticEntityResolver
+from backend.app.iso20022.mx_parser import Iso20022MxParser
+from backend.app.iso20022.swift_mt_parser import SwiftMtParser
+from backend.app.qa_analytics.engine import QaAndRedTeamAnalyticsEngine
+from backend.app.reporting.fincen_bsa_xml import FinCenBsaXmlExporter
+from backend.app.reporting.fiu_ind_finnet_xml import FiuIndFinnetExporter
+from backend.app.typologies.global_registry import get_full_100_catalog
+
+
+@router.get("/rules/global-100")
+def list_global_100_rules(
+    current_user: Dict[str, Any] = Depends(get_current_user),
+) -> Dict[str, Any]:
+    assert_permission(current_user["role"], Permission.VIEW_DASHBOARD)
+    catalog = get_full_100_catalog()
+    return {"count": len(catalog), "rules": catalog}
+
+
+@router.get("/entity-resolution/scan")
+def run_entity_resolution_scan(
+    current_user: Dict[str, Any] = Depends(get_current_user),
+    db: DatabaseManager = Depends(get_db),
+) -> Dict[str, Any]:
+    assert_permission(current_user["role"], Permission.VIEW_CUSTOMERS)
+    return ProbabilisticEntityResolver(db).resolve_all_entities()
+
+
+@router.get("/customers/{customer_id}/edd-dossier")
+def get_customer_edd_dossier(
+    customer_id: str,
+    current_user: Dict[str, Any] = Depends(get_current_user),
+    db: DatabaseManager = Depends(get_db),
+) -> Dict[str, Any]:
+    assert_permission(current_user["role"], Permission.VIEW_CUSTOMERS)
+    return EnhancedDueDiligenceEngine(db).generate_edd_dossier(customer_id)
+
+
+@router.get("/cases/{case_id}/export-fincen-xml")
+def export_case_fincen_xml(
+    case_id: str,
+    current_user: Dict[str, Any] = Depends(get_current_user),
+    db: DatabaseManager = Depends(get_db),
+) -> Dict[str, Any]:
+    assert_permission(current_user["role"], Permission.VIEW_DASHBOARD)
+    return FinCenBsaXmlExporter(db).export_sar_xml(case_id)
+
+
+@router.get("/cases/{case_id}/export-fiu-ind-xml")
+def export_case_fiu_ind_xml(
+    case_id: str,
+    current_user: Dict[str, Any] = Depends(get_current_user),
+    db: DatabaseManager = Depends(get_db),
+) -> Dict[str, Any]:
+    assert_permission(current_user["role"], Permission.VIEW_DASHBOARD)
+    return FiuIndFinnetExporter(db).export_fiu_ind_str_xml(case_id)
+
+
+@router.get("/qa/red-team-simulation")
+def run_red_team_simulation(
+    current_user: Dict[str, Any] = Depends(get_current_user),
+    db: DatabaseManager = Depends(get_db),
+) -> Dict[str, Any]:
+    assert_permission(current_user["role"], Permission.VIEW_DASHBOARD)
+    qa_engine = QaAndRedTeamAnalyticsEngine(db)
+    return {
+        "qa_sampling": qa_engine.generate_risk_stratified_qa_sample(),
+        "red_team_evasion": qa_engine.run_adversarial_red_team_evasion_suite(),
+    }
