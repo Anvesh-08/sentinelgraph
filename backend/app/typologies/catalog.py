@@ -237,3 +237,7 @@ DEFAULT_TYPOLOGY_RULES: List[Dict[str, Any]] = [
         "regulatory_citation": "FFIEC Cybersecurity & Automated Bot Fraud Detection Indicators",
     },
 ]
+
+
+from backend.app.typologies.regional_catalog import REGIONAL_TYPOLOGY_RULES
+FULL_100_TYPOLOGY_RULES = DEFAULT_TYPOLOGY_RULES + REGIONAL_TYPOLOGY_RULES
