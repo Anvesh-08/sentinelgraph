@@ -158,9 +158,14 @@ def token_set_similarity(name1: str, name2: str) -> float:
         levenshtein_similarity(sorted1, sorted2),
     ]
     if common_str:
-        # Partial subset overlap weighted by token coverage
-        coverage = len(common) / max(len(tokens1), len(tokens2))
-        scores.append(0.55 * coverage + 0.45 * jaro_winkler_similarity(common_str, sorted1))
+        # Standard token-set ratio: compare intersection against both sorted full strings and take max
+        min_coverage = len(common) / min(len(tokens1), len(tokens2))
+        max_coverage = len(common) / max(len(tokens1), len(tokens2))
+        scores.append(
+            0.50 * min_coverage
+            + 0.25 * max_coverage
+            + 0.25 * max(jaro_winkler_similarity(common_str, sorted1), jaro_winkler_similarity(common_str, sorted2))
+        )
     return round(max(scores), 4)
 
 

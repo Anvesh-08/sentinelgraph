@@ -686,16 +686,15 @@ class ExtremeVelocityZScoreDetector(BaseTypologyDetector):
                 continue
             cust = context.customers_by_id.get(txs[0]["customer_id"], {})
             expected_mo = max(1000.0, float(cust.get("expected_monthly_volume_usd", 5000.0)))
-            amounts = [float(t["amount_usd"]) for t in txs]
-            mean_amt = sum(amounts) / len(amounts)
-            variance = sum((x - mean_amt) ** 2 for x in amounts) / max(1, len(amounts) - 1)
-            std_dev = math.sqrt(variance) if variance > 0 else 1.0
-
-            for tx in txs:
+            for idx, tx in enumerate(txs):
                 amt = float(tx["amount_usd"])
                 if amt < min_amt:
                     continue
-                z_score = (amt - mean_amt) / max(1.0, std_dev)
+                peer_amounts = [float(t["amount_usd"]) for j, t in enumerate(txs) if j != idx]
+                mean_amt = sum(peer_amounts) / len(peer_amounts)
+                variance = sum((x - mean_amt) ** 2 for x in peer_amounts) / max(1, len(peer_amounts) - 1)
+                std_dev = max(100.0, math.sqrt(variance))
+                z_score = (amt - mean_amt) / std_dev
                 kyc_mult = amt / expected_mo
                 if z_score >= min_z and kyc_mult >= min_mult:
                     results.append(
