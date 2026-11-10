@@ -35,7 +35,7 @@ def count_commits() -> int:
 
 
 def count_lines_of_code() -> dict:
-    by_ext = {".py": 0, ".sql": 0, ".ts": 0, ".html": 0, ".md": 0, ".ps1": 0, ".yml": 0}
+    by_ext = {".py": 0, ".sql": 0, ".ts": 0, ".tsx": 0, ".json": 0, ".html": 0, ".md": 0, ".ps1": 0, ".yml": 0}
     total_files = 0
     total_lines = 0
     for p in REPO_ROOT.rglob("*"):
