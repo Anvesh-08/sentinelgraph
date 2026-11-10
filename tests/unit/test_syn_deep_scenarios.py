@@ -7,7 +7,7 @@ from backend.app.typologies.base import TypologyEvaluationContext
 from backend.app.typologies.global_registry import get_175_detector_map
 
 
-class Cyber,BECAndSyntheticIdentityDeepScenariosTests(unittest.TestCase):
+class CyberBecAndSyntheticIdentityDeepScenariosTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.detectors = get_175_detector_map()
