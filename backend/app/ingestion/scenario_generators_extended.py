@@ -236,7 +236,7 @@ class ExtendedCrimeScenarioFactory:
         return txs
 
 
-    def generate_upi_imps_mule_aggregation_ring(
+    def _old_generate_upi_imps_mule_aggregation_ring(
         self,
         source_account_id: str,
         target_account_id: str,
@@ -673,4 +673,45 @@ class ExtendedCrimeScenarioFactory:
             })
             curr_dt += timedelta(hours=interval_hours)
             curr_acct = next_acct
+        return txs
+
+    def generate_upi_imps_mule_aggregation_ring(
+        self,
+        source_account_id: str,
+        target_account_id: str,
+        customer_id: str,
+        hop_count: int = 4,
+        interval_hours: int = 12,
+    ):
+        import uuid
+        from datetime import datetime, timezone, timedelta
+        txs = []
+        curr_dt = self.base_dt
+        for hop in range(hop_count):
+            tx_id = f'tx-ext-{uuid.uuid4().hex[:10]}'
+            amt = round(self.rng.uniform(4500.0, 9500.0), 2)
+            txs.append({
+                'id': tx_id,
+                'external_tx_id': f'EXT-AML-RBI-003-{hop+1}-{uuid.uuid4().hex[:6].upper()}',
+                'account_id': source_account_id,
+                'customer_id': customer_id,
+                'counterparty_id': f'cp-mule-{hop+1}',
+                'counterparty_account_id': None,
+                'tx_timestamp': curr_dt.isoformat(),
+                'tx_type': 'INTERNAL_TRANSFER',
+                'direction': 'INBOUND',
+                'amount_original': amt,
+                'currency_original': 'USD',
+                'fx_rate_to_usd': 1.0,
+                'amount_usd': amt,
+                'balance_after_usd': 25000.0,
+                'channel': 'ONLINE_WEB',
+                'origin_country': 'IN',
+                'destination_country': 'IN',
+                'remittance_purpose': f'P2P INSTANT PAYMENT UPI MULE AGGREGATION (HOP {hop+1})',
+                'scenario_tag': 'SCENARIO_UPI_MULE_RING',
+                'is_flagged': 0,
+                'created_at': datetime.now(timezone.utc).isoformat(),
+            })
+            curr_dt += timedelta(hours=interval_hours)
         return txs
