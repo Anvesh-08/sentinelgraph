@@ -11,6 +11,7 @@ Performs structural validation, extracts Debtor/Creditor/UltimateParty/Intermedi
 """
 import hashlib
 import uuid
+from xml.sax.saxutils import escape as xml_escape
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -536,7 +537,7 @@ class Iso20022MxParser:
         <Cd>GDDS</Cd>
       </Purp>
       <RmtInf>
-        <Ustrd>{remittance_info}</Ustrd>
+        <Ustrd>{xml_escape(remittance_info)}</Ustrd>
       </RmtInf>
     </CdtTrfTxInf>
   </FIToFICstmrCdtTrf>
