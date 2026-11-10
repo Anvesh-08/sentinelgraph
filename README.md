@@ -78,3 +78,5 @@ Open **`http://127.0.0.1:8000`** in your browser to access the interactive Inves
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — Engineering workflow, branching standards, and code review guidelines.
 - [`DEVELOPMENT_ROADMAP.md`](DEVELOPMENT_ROADMAP.md) — Completed phases and v1.1–v2.0 engineering roadmap.
 - [`CHANGELOG.md`](CHANGELOG.md) — Versioned release notes.
+
+<!-- Release v2.0.0 Verified -->
