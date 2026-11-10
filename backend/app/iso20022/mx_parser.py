@@ -220,7 +220,9 @@ class Iso20022MxParser:
             e2e_id = _find_text(tx_info, ["PmtId", "EndToEndId"], default="NOTPROVIDED")
             uetr = _find_text(tx_info, ["PmtId", "UETR"], default=str(uuid.uuid4()))
 
-            amt_elem = _find_child(tx_info, "IntrBkSttlmAmt") or _find_child(tx_info, "InstdAmt")
+            amt_elem = _find_child(tx_info, "IntrBkSttlmAmt")
+            if amt_elem is None:
+                amt_elem = _find_child(tx_info, "InstdAmt")
             ccy = amt_elem.attrib.get("Ccy", "USD") if amt_elem is not None else "USD"
             raw_amt = float((amt_elem.text or "0.0").strip()) if amt_elem is not None else 0.0
             usd_amt = round(raw_amt * FX_RATES_TO_USD.get(ccy.upper(), 1.0), 2)
